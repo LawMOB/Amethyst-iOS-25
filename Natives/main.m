@@ -312,12 +312,12 @@ int main(int argc, char *argv[]) {
     init_setupCustomControls();
 
     // If sandbox is disabled, W^X JIT can be enabled by Amethyst itself
-    if (!isJITEnabled(true) &&
-        (isJailbroken || getEntitlementValue(@"com.apple.private.security.no-sandbox"))) {
-        NSLog(@"[Pre-init] jailbroken/no-sandbox detected, trying to enable JIT via ptrace self-trace");
+    if (!isJITEnabled(true) && getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
+        NSLog(@"[Pre-init] no-sandbox: YES, trying to enable JIT");
         int pid;
         int ret = posix_spawnp(&pid, argv[0], NULL, NULL, (char *[]){argv[0], "", NULL}, environ);
         if (ret == 0) {
+            // Cleanup child process
             waitpid(pid, NULL, WUNTRACED);
             ptrace(PT_DETACH, pid, NULL, 0);
             kill(pid, SIGTERM);
@@ -328,9 +328,9 @@ int main(int argc, char *argv[]) {
             } else {
                 NSLog(@"[Pre-init] Failed to enable JIT: unknown reason");
             }
-         } else {
-             NSLog(@"[Pre-init] Failed to enable JIT: posix_spawn() failed errno %d", errno);
-         }
+        } else {
+            NSLog(@"[Pre-init] Failed to enable JIT: posix_spawn() failed errno %d", errno);
+        }
     }
 
     @autoreleasepool {
