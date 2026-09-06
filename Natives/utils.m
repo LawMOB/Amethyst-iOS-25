@@ -25,10 +25,9 @@ BOOL getEntitlementValue(NSString *key) {
 }
 
 BOOL isJITEnabled(BOOL checkCSFlags) {
-    if (!checkCSFlags && (getEntitlementValue(@"dynamic-codesigning") || isJailbroken)) {
+    if (!checkCSFlags && getEntitlementValue(@"dynamic-codesigning")) {
         return YES;
     }
-
     int flags;
     csops(getpid(), 0, &flags, sizeof(flags));
     return (flags & CS_DEBUGGED) != 0;
