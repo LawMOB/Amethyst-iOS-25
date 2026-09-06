@@ -347,6 +347,30 @@ int launchJVM(NSString *username, id launchTarget, int width, int height, int mi
         NSLog(@"[DyldLVBypass] Hook disabled! Loading unsigned dylib will cause code signature error.");
     }
 
+    NSString *ldidPath = @"/var/jb/usr/bin/ldid";
+    if ([fm fileExistsAtPath:ldidPath]) {
+        NSLog(@"[JavaLauncher] Rootless environment detected. Signing JRE dynamic libraries...");
+        NSString *libPath = [javaHome stringByAppendingPathComponent:@"lib"];
+        NSDirectoryEnumerator *enumerator = [fm enumeratorAtPath:libPath];
+        NSString *file;
+    
+        while (file = [enumerator nextObject]) {
+            if ([file hasSuffix:@".dylib"]) {
+                NSString *fullPath = [libPath stringByAppendingPathComponent:file];
+                pid_t pid;
+                const char *argv[] = {"ldid", "-S", fullPath.UTF8String, NULL};
+            
+                int status = posix_spawn(&pid, ldidPath.UTF8String, NULL, NULL, (char *const *)argv, environ);
+                if (status == 0) {
+                    waitpid(pid, NULL, 0); 
+                } else {
+                    NSLog(@"[JavaLauncher] Failed to spawn ldid process for: %@", file);
+                }
+           }
+      }
+      NSLog(@"[JavaLauncher] Rootless library signing process completed.");
+    }
+
     int allocmem;
     if (getPrefBool(@"java.auto_ram")) {
         CGFloat autoRatio = getEntitlementValue(@"com.apple.private.memorystatus") ? 0.4 : 0.25;
