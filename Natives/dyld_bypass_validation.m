@@ -152,20 +152,22 @@ void *getDyldBase(void) {
 }
 
 void* hooked_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset) {
-    // this is to avoid a legacy codepath checking if process is allowed to map RWX which never worked properly
     if (flags & MAP_JIT) {
         errno = EINVAL;
         return MAP_FAILED;
     }
     
     void *map = __mmap(addr, len, prot, flags, fd, offset);
+    if (fd == -1 || (prot & PROT_EXEC) == 0) {
+        return map;
+    }
+    
     // Handle some cases where it will still map but without executable permission
     if (mprotect(map, len, prot) == -1) {
         munmap(map, len);
         map = MAP_FAILED;
     }
-    if (map == MAP_FAILED && fd && (prot & PROT_EXEC)) {
-        //printf("[DyldLVBypass] mmap(prot=%d, flags=%d, fd=%d)\n", prot, flags, fd);
+    if (map == MAP_FAILED) {
         map = __mmap(addr, len, prot, flags | MAP_PRIVATE | MAP_ANON, 0, 0);
         if (DeviceHasJITFlags(JIT_FLAG_FORCE_MIRRORED | JIT_FLAG_HAS_TXM)) {
             JIT26PrepareRegion(map, len);
@@ -177,13 +179,11 @@ void* hooked_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off
             memcpy(map, memoryLoadedFile, len);
             mprotect(map, len, prot);
         } else {
-            // mirror `addr` (rx, JIT applied) to `mirrored` (rw)
             vm_address_t mirrored = 0;
             vm_prot_t cur_prot, max_prot;
             kern_return_t ret = vm_remap(mach_task_self(), &mirrored, len, 0, VM_FLAGS_ANYWHERE, mach_task_self(), (vm_address_t)map, false, &cur_prot, &max_prot, VM_INHERIT_SHARE);
             if(ret == KERN_SUCCESS) {
-                vm_protect(mach_task_self(), mirrored, len, NO,
-                           VM_PROT_READ | VM_PROT_WRITE);
+                vm_protect(mach_task_self(), mirrored, len, NO, VM_PROT_READ | VM_PROT_WRITE);
                 memcpy((void*)mirrored, memoryLoadedFile, len);
                 vm_deallocate(mach_task_self(), mirrored, len);
             }
