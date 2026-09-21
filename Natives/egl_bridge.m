@@ -17,6 +17,7 @@
 #include "glfw_keycodes.h"
 #include "ctxbridges/bridge_tbl.h"
 #include "ctxbridges/osmesa_internal.h"
+#include "ios_uikit_bridge.h"
 #include "utils.h"
 #include "ZinkConfig.h"
 
@@ -62,6 +63,11 @@ int pojavInitOpenGL() {
         setenv("AMETHYST_RENDERER", renderer.UTF8String, 1);
         set_gl_bridge_tbl();
     } else if ([renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE]) {
+        set_gl_bridge_tbl();
+    } else if (isMobileGLRenderer(renderer.UTF8String)) {
+        setenv("MOBILEGL_BACKEND_TYPE",
+            [renderer isEqualToString:@ RENDERER_NAME_MOBILEGL_GLES] ? "DirectGLES" : "DirectVulkan",
+            1);
         set_gl_bridge_tbl();
     } else if ([renderer isEqualToString:@ RENDERER_NAME_LTW]) {
         // Pre-load ANGLE as host EGL before LTW, so LTW's constructor
@@ -124,7 +130,15 @@ void* pojavCreateContext(basic_render_window_t* contextSrc) {
     static BOOL inited = NO;
     if (!inited) {
         inited = YES;
-        pojavInitOpenGL();
+        if (pojavInitOpenGL() != 0) {
+            NSString *renderer = NSProcessInfo.processInfo.environment[@"AMETHYST_RENDERER"];
+            NSLog(@"[egl_bridge] pojavInitOpenGL failed for renderer %@ — aborting context creation instead of crashing", renderer);
+            UIKit_returnToSplitView();
+            showDialog(localize(@"Error", nil),
+                [NSString stringWithFormat:@"Failed to initialize the %@ renderer. Check the device console log for the dlopen/dlsym error (look for \"EGLBridge:\"), then verify the renderer library is bundled in Frameworks/ and its dependencies (e.g. MoltenVK) resolve correctly.", renderer]);
+            inited = NO; // allow retrying (e.g. after switching renderer) instead of wedging this flag permanently
+            return NULL;
+        }
     }
 
     basic_render_window_t* ctx = br_init_context(contextSrc);
