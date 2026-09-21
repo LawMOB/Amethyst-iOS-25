@@ -13,6 +13,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download MobileGL Directory
+        env:
+          GIT_LFS_SKIP_SMUDGE: 1
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/herbrine8403/Amethyst-iOS-MyRemastered.git temp_repo
           cd temp_repo
