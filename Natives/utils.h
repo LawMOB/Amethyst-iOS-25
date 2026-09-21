@@ -3,6 +3,7 @@
 #import <UIKit/UIKit.h>
 
 #include <stdbool.h>
+#include <string.h>
 #include "environ.h"
 #include "jni.h"
 
@@ -40,6 +41,13 @@
 #define RENDERER_NAME_LTW "libltw.dylib"
 #define RENDERER_NAME_VK_ZINK "libOSMesa.8.dylib"
 #define RENDERER_NAME_VULKAN "libMoltenVK.dylib"
+#define RENDERER_NAME_MOBILEGL "libMobileGL.dylib"
+#define RENDERER_NAME_MOBILEGL_GLES "libMobileGL-gles.dylib"
+
+static inline bool isMobileGLRenderer(const char *renderer) {
+    return renderer && (!strcmp(renderer, RENDERER_NAME_MOBILEGL) ||
+                        !strcmp(renderer, RENDERER_NAME_MOBILEGL_GLES));
+}
 
 #define SPECIALBTN_KEYBOARD -1
 #define SPECIALBTN_TOGGLECTRL -2
