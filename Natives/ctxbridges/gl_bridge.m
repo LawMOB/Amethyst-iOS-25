@@ -11,13 +11,25 @@ static EGLDisplay g_EglDisplay;
 static egl_library handle;
 
 void dlsym_EGL() {
-    void* dl_handle = dlopen("@rpath/libtinygl4angle.dylib", RTLD_GLOBAL);
-    if (!dl_handle) {
-        dl_handle = dlopen("@rpath/libEGL.framework/libEGL", RTLD_LOCAL);
-    }
-    if (!dl_handle) {
-        NSLog(@"EGLBridge: Failed to load ANGLE EGL library");
-        return;
+    NSString *renderer = NSProcessInfo.processInfo.environment[@"AMETHYST_RENDERER"];
+    BOOL useMobileGL = isMobileGLRenderer(renderer.UTF8String);
+
+    void* dl_handle;
+    if (useMobileGL) {
+        dl_handle = dlopen([NSString stringWithFormat:@"@rpath/%@", renderer].UTF8String, RTLD_NOW | RTLD_GLOBAL);
+        if (!dl_handle) {
+            NSLog(@"EGLBridge: Failed to load MobileGL library (%@): %s", renderer, dlerror() ?: "unknown dlopen error");
+            return;
+        }
+    } else {
+        dl_handle = dlopen("@rpath/libtinygl4angle.dylib", RTLD_GLOBAL);
+        if (!dl_handle) {
+            dl_handle = dlopen("@rpath/libEGL.framework/libEGL", RTLD_LOCAL);
+        }
+        if (!dl_handle) {
+            NSLog(@"EGLBridge: Failed to load ANGLE EGL library");
+            return;
+        }
     }
     BOOL useLTW = [@ RENDERER_NAME_LTW isEqualToString:
         NSProcessInfo.processInfo.environment[@"AMETHYST_RENDERER"]];
@@ -78,7 +90,8 @@ gl_render_window_t* gl_init_context(gl_render_window_t *share) {
     gl_render_window_t* bundle = calloc(1, sizeof(gl_render_window_t));
 
     NSString *renderer = NSProcessInfo.processInfo.environment[@"AMETHYST_RENDERER"];
-    BOOL angleDesktopGL = [renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE];
+    BOOL angleDesktopGL = [renderer isEqualToString:@ RENDERER_NAME_MTL_ANGLE] ||
+        isMobileGLRenderer(renderer.UTF8String);
 
     const EGLint attribs[] = {
         EGL_RED_SIZE, 8,
