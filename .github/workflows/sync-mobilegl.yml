@@ -34,8 +34,7 @@ jobs:
           
           if ! git diff --staged --quiet; then
             git commit -m "chore: update external MobileGL folder"
-            git push origin HEAD:${{ github.ref }}
+            git push origin HEAD:${{ github.ref }} --no-verify
           else
             echo "MobileGL directory is up to date. No new commits were created."
           fi
-
