@@ -222,6 +222,8 @@
 "preference.title.renderer.release.mg" = "MobileGlues";
 "preference.title.renderer.release.zink" = "Zink";
 "preference.title.renderer.release.ltw" = "LTW";
+"preference.title.renderer.release.mobilgl" = "MobileGL";
+"preference.title.renderer.release.mobilgl_gles" = "MobileGL ES";
 
 "preference.title.renderer.debug.auto" = "Auto: gl4es or ANGLE";
 "preference.title.renderer.debug.gl4es" = "holy gl4es - exports OpenGL 2.1";
@@ -230,6 +232,8 @@
 "preference.title.renderer.debug.zink" = "Zink (Mesa 25) - exports OpenGL 4.1 via MoltenVK";
 "preference.title.renderer.debug.vulkan" = "MoltenVK - native Vulkan via Metal (1.21.6+ snapshots only)";
 "preference.title.renderer.debug.ltw" = "LTW (1.17+) - OpenGL 3.3 via OpenGL ES/Metal, EXPERIMENTAL";
+"preference.title.renderer.debug.mobilegl" = "MobileGL Vulkan - exports desktop OpenGL via Vulkan/MoltenVK, EXPERIMENTAL";
+"preference.title.renderer.debug.mobilegl_gles" = "MobileGL ES - exports desktop OpenGL via OpenGL ES, EXPERIMENTAL";
 
 "Device Info" = "Device Info";
 
