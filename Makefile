@@ -346,6 +346,7 @@ dep_mobilegl:
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
 		-DCMAKE_C_FLAGS="-arch arm64" \
 		-DMOBILEGL_VULKAN_LIBRARY="$(MOLTENVK_LIBRARY)" \
+		-DENABLE_OPT=0 \
 $(MOBILEGL_SOURCE_DIR)
 
 	cmake --build $(WORKINGDIR)/mobilegl --config RelWithDebInfo -j$(JOBS) --target MobileGL
